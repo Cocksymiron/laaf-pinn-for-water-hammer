@@ -4,7 +4,7 @@ import time
 import torch
 import torch.nn as nn
 import numpy as np
-from Network import DNN
+from network import Network
 import scipy as sc
 from torch.optim import lr_scheduler
 
@@ -202,7 +202,7 @@ def ph_tensor2(z):
 
 
 if __name__ == "__main__":
-    data = sc.io.loadmat('case2/train.mat')
+    data = sc.loadmat('case2/train.mat')
 
     H_star = data['H_star']  # N x T
     t_star = data['t']  # T x 1
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     T_c = torch.linspace(float(T.min()), float(T.max()), 401)
     Y_c = torch.stack(torch.meshgrid(X_c, T_c)).reshape(2, -1).T
 
-    testdata = sc.io.loadmat('case2/test.mat')
+    testdata = sc.loadmat('case2/test.mat')
     H_test = testdata['H_test']  # N x T
     X_test = testdata['X_test']  # N x 1
     V_test = testdata['V_test']

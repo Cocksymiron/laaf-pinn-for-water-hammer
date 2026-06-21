@@ -26,7 +26,7 @@ class PINN :
     def __init__(self, x, t, Q, alpha, x_t, t_t, Q_t, alpha_t):
         layers = [2] + [20] * 8 + [2]
         self.model = Network(layers).to(device) #создание прототипа класса network с заранее описанной структурой ИНС
-        XX0, TT0 = torch.meshgrid(x, t) #Создание сетки координат для обучающей выборки 
+        XX0, TT0 = torch.meshgrid(x,t) #Создание сетки координат для обучающей выборки 
         self.pipe_L = 40
         self.n_collo = 10
         x_collocation = torch.linspace(10, self.pipe_L, self.n_collo)
@@ -203,26 +203,29 @@ def ph_tensor1(y):
 
 def ph_tensor2(z):
     z = z.astype(np.float32)
-    Z = torch.from_numpy(z).T
-    return Z
+    z = torch.from_numpy(z).T
+    z = z.flatten()[:, None]
+    return z
+
 if __name__ == "__main__":
-    data = sc.io.loadmat('Case_MOC_SFM/train.mat')
+    data = sc.loadmat('RU_PG/train.mat')
     #Входные данные в тензор для работы с фреймворком pytorch обучение
     X_sh = data ['X'] #координата положения 
     T_sh = data ['t']
-    Q_sh = data ['Q']
-    alpha_sh = ['alpha']
+    Q_sh = data ['F']
+    alpha_sh = data ['a']
     
     X = ph_tensor1(X_sh) 
     T = ph_tensor1(T_sh)
     Q_0 = ph_tensor2(Q_sh)
     alpha_0 = ph_tensor2(alpha_sh)
-    data = sc.io.loadmat('Case_MOC_SFM/test.mat')
 
-    X_test = data ['x_test']
-    T_test = data ['t_test']
-    Q_test = data ['Q_test']
-    alpha_test = ['alpha_test']
+    testdata = sc.loadmat('RU_PG/test.mat')
+
+    X_test = testdata ['X_test']
+    T_test = testdata ['t_test']
+    Q_test = testdata ['F_test']
+    alpha_test = testdata ['a_test']
 
     X_t= ph_tensor1(X_test)
     T_t = ph_tensor1(T_test)

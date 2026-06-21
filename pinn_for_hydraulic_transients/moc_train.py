@@ -7,7 +7,6 @@ import numpy as np
 from network import Network
 import scipy as sc
 from torch.utils.data import DataLoader, TensorDataset
-from pyDOE import lhs
 from torch.optim import lr_scheduler
 from network_LAAF import DNN_LAAF
 
