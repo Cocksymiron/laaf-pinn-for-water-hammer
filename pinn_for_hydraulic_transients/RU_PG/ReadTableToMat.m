@@ -1,6 +1,6 @@
 clc
 clear all
-Train=readmatrix('test.xlsx')
+Train=readmatrix('train.xlsx')
 X_test = [10];
 F_test=Train(:,1)
 t_test=Train(:,2)
