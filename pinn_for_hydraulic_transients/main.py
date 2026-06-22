@@ -5,11 +5,11 @@ import torch.nn as nn
 import numpy as np
 import scipy.io as sc
 from matplotlib import pyplot as plt
-from network import Network
+from Network_MLP import mMLP
 from torch.optim import lr_scheduler
 D = 0.3
 A = np.pi * D**2/4
-r = 1000
+r = 900
 lamda = 0.01
 S0 = 0.2
 k1 = 0.01
@@ -17,22 +17,22 @@ np.random.seed(1234)
 torch.cuda.manual_seed(1234)
 torch.manual_seed(1234)
 torch.cuda.empty_cache()
-step_size = 500
-total_epoch = 40000
+step_size = 2000
+total_epoch = 50000 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 criterion = nn.MSELoss()
 
 class PINN :
     def __init__(self, x, t, Q, alpha, x_t, t_t, Q_t, alpha_t):
-        layers = [2] + [20] * 8 + [2]
-        self.model = Network(layers).to(device) #создание прототипа класса network с заранее описанной структурой ИНС
+        layers = [2] + [24] * 4 + [2]
+        self.model = mMLP(layers).to(device) #создание прототипа класса network с заранее описанной структурой ИНС
         XX0, TT0 = torch.meshgrid(x,t) #Создание сетки координат для обучающей выборки 
         self.pipe_L = 40
         self.n_collo = 10
         x_collocation = torch.linspace(40, self.pipe_L, self.n_collo)
         lb = float(t.min())
         ub = float(t.max())
-        self.t_collocation = torch.linspace(lb, ub, 1)
+        self.t_collocation = torch.linspace(lb, ub, 100)
         XX1, TT1 = torch.meshgrid(x_collocation, self.t_collocation) #Создание сетки координат для тестовой выборки
 
         x0 = XX0.flatten()[:, None]  # NT x 1 Получение тензора новой структуры, сохраняя строчный порядок
@@ -74,7 +74,7 @@ class PINN :
 
         # L-BFGS
         self.lbfgs = torch.optim.LBFGS(self.model.parameters(),
-                                       lr=1., max_iter=10000, max_eval=20000,
+                                       lr=1., max_iter=5000, max_eval=5000,
                                        history_size=50,
                                        tolerance_grad=1e-7,
                                        tolerance_change=1.0 * np.finfo(float).eps,
@@ -90,6 +90,8 @@ class PINN :
         self.train_loss = []  # list_loss
         self.test_loss = []
         self.lamda_list = []
+        self.data_to_fig1 = []
+        self.data_to_fig2 = []
 
     def loss_ODE_func(self, x_co): #расчет ошибки дифференцирования исследуемой динамики
 
@@ -111,7 +113,7 @@ class PINN :
                                     create_graph=True)[0]
         dP_dx = dp_dx[:, 0]
         dP_dt = dp_dx[:, 1]
-        dP_da =  r*0.5*(Q1/S0/(k1*alpha1))**2
+        dP_da =  self.lamda*r*0.5*(Q1/S0/(k1*alpha1))**2
         f_1 = dQ_dt - A*dP_da/r + lamda*Q1* abs (Q1) /2/ D/ A
         f_2 =  r*0.5*(Q1/S0/(k1*alpha1))**2
 
@@ -138,7 +140,6 @@ class PINN :
         Loss, _, _ = self.loss_func(self.X_o, self.Qa)
         # self.losses.append(Loss.item())
         Loss.backward()
-
         return Loss
 
     def Train(self):
@@ -152,7 +153,8 @@ class PINN :
             LOSS, loss0, loss1 = self.loss_func(self.X_o, self.Qa)
             self.train_loss.append(LOSS.item())
             self.lamda_list.append(self.lamda.item())
-
+            self.data_to_fig1.append(loss0.item())
+            self.data_to_fig2.append(loss1.item())
             LOSS.backward()
             self.adam.step()
            # self.adam_lamda.step()
@@ -169,7 +171,6 @@ class PINN :
 
         print("Using L-BFGS")
         self.lbfgs.step(self.closure)
-
         print(torch.mean(self.lamda))
         # trainloss_array = np.array(self.train_loss)
         # np.save('loss_values.npy', trainloss_array)
@@ -180,7 +181,7 @@ class PINN :
 
         plt.figure(1)
         plt.semilogy(self.train_loss, label='Train Loss', color='blue')
-        plt.title('Model Loss')
+        plt.title('Ошибка обучения')
         plt.xlabel('Iterations')
         plt.ylabel('Loss')
         plt.legend()
@@ -189,12 +190,31 @@ class PINN :
 
         plt.figure(2)
         plt.semilogy(self.test_loss, linestyle='--', label='Test Loss', color='orange')
-        plt.title('Evaluate Loss')
+        plt.title('Ошибка тестирования')
         plt.xlabel('Iterations')
         plt.ylabel('Loss')
         plt.legend()
         plt.savefig('loss_test.png', format='png')
         plt.close()
+
+        plt.figure(3)
+        plt.semilogy(self.data_to_fig1, linestyle='--', label='Data Loss', color='green')
+        plt.title('Ошибка данных')
+        plt.xlabel('Iterations')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.savefig('loss_data.png', format='png')
+        plt.close()
+
+        plt.figure(4)
+        plt.semilogy(self.data_to_fig2, linestyle='--', label='ODE Loss', color='red')
+        plt.title('Ошибка дифференцирования')
+        plt.xlabel('Iterations')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.savefig('loss_ODE.png', format='png')
+        plt.close()
+
 
 
 def ph_tensor1(y):
@@ -240,4 +260,4 @@ if __name__ == "__main__":
     pinn.Train()
 
     elapsed = time.time() - start_time
-    print('Training time: %.4f' % elapsed)
+    print('Training time: %.2f' % elapsed)
