@@ -18,7 +18,7 @@ torch.cuda.manual_seed(1234)
 torch.manual_seed(1234)
 torch.cuda.empty_cache()
 step_size = 2000
-total_epoch = 50000 
+total_epoch = 40000 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 criterion = nn.MSELoss()
 
@@ -261,3 +261,4 @@ if __name__ == "__main__":
 
     elapsed = time.time() - start_time
     print('Training time: %.2f' % elapsed)
+    torch.save(pinn.model.state_dict(), 'RU_PG.pth')
