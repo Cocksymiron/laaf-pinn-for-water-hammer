@@ -32,7 +32,7 @@ class PINN :
         x_collocation = torch.linspace(40, self.pipe_L, self.n_collo)
         lb = float(t.min())
         ub = float(t.max())
-        self.t_collocation = torch.linspace(lb, ub, 401)
+        self.t_collocation = torch.linspace(lb, ub, 1)
         XX1, TT1 = torch.meshgrid(x_collocation, self.t_collocation) #Создание сетки координат для тестовой выборки
 
         x0 = XX0.flatten()[:, None]  # NT x 1 Получение тензора новой структуры, сохраняя строчный порядок
@@ -74,7 +74,7 @@ class PINN :
 
         # L-BFGS
         self.lbfgs = torch.optim.LBFGS(self.model.parameters(),
-                                       lr=1., max_iter=20000, max_eval=20000,
+                                       lr=1., max_iter=10000, max_eval=20000,
                                        history_size=50,
                                        tolerance_grad=1e-7,
                                        tolerance_change=1.0 * np.finfo(float).eps,
@@ -123,7 +123,7 @@ class PINN :
 
         loss_data = self.criterion(Qa0, Qa_ob)
         Qa00 = torch.zeros_like(pred_f1)
-        loss_PDE = self.criterion(pred_f1, Qa00) + self.criterion(pred_f2, Qa00)
+        loss_PDE = self.criterion(pred_f1, Qa00)
 
         loss = loss_data + loss_PDE
 
