@@ -100,7 +100,7 @@ class PINN:
         self.adam = torch.optim.Adam(self.model.parameters())
 
         # lr_decay
-        self.schedule = lr_scheduler.ExponentialLR(self.adam, gamma=0.9, verbose=False)
+        self.schedule = lr_scheduler.ExponentialLR(self.adam, gamma=0.9)
         self.step_size = step_size
 
         self.train_loss = []  # list_loss

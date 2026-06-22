@@ -9,15 +9,15 @@ from network import Network
 from torch.optim import lr_scheduler
 D = 0.3
 A = np.pi * D**2/4
-r = 800
+r = 1000
 lamda = 0.01
-S0 = 0.1
+S0 = 0.2
 k1 = 0.01
 np.random.seed(1234)
 torch.cuda.manual_seed(1234)
 torch.manual_seed(1234)
 torch.cuda.empty_cache()
-step_size = 2500
+step_size = 500
 total_epoch = 40000
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 criterion = nn.MSELoss()
@@ -29,7 +29,7 @@ class PINN :
         XX0, TT0 = torch.meshgrid(x,t) #Создание сетки координат для обучающей выборки 
         self.pipe_L = 40
         self.n_collo = 10
-        x_collocation = torch.linspace(10, self.pipe_L, self.n_collo)
+        x_collocation = torch.linspace(40, self.pipe_L, self.n_collo)
         lb = float(t.min())
         ub = float(t.max())
         self.t_collocation = torch.linspace(lb, ub, 401)
@@ -69,6 +69,8 @@ class PINN :
 
         # no. iteration
         self.iter = 1
+        self.lamda = nn.Parameter(torch.tensor([0.0], requires_grad=True, device=device))
+        self.adam_lamda = torch.optim.Adam([self.lamda], lr=0.001)
 
         # L-BFGS
         self.lbfgs = torch.optim.LBFGS(self.model.parameters(),
@@ -82,7 +84,7 @@ class PINN :
         self.adam = torch.optim.Adam(self.model.parameters())
 
         # lr_decay
-        self.schedule = lr_scheduler.ExponentialLR(self.adam, gamma=0.9, verbose=False)
+        self.schedule = lr_scheduler.ExponentialLR(self.adam, gamma=0.9)
         self.step_size = step_size
 
         self.train_loss = []  # list_loss
@@ -109,8 +111,8 @@ class PINN :
                                     create_graph=True)[0]
         dP_dx = dp_dx[:, 0]
         dP_dt = dp_dx[:, 1]
-
-        f_1 = dQ_dt - A*dP_dx/r + lamda*Q1* abs (Q1) /2/ D/ A
+        dP_da =  r*0.5*(Q1/S0/(k1*alpha1))**2
+        f_1 = dQ_dt - A*dP_da/r + lamda*Q1* abs (Q1) /2/ D/ A
         f_2 =  r*0.5*(Q1/S0/(k1*alpha1))**2
 
         return f_1, f_2
@@ -123,7 +125,7 @@ class PINN :
         Qa00 = torch.zeros_like(pred_f1)
         loss_PDE = self.criterion(pred_f1, Qa00) + self.criterion(pred_f2, Qa00)
 
-        loss = loss_data + 0.1 * loss_PDE
+        loss = loss_data + loss_PDE
 
         if self.iter % 100 == 0:
             print(self.iter, loss.item(), loss_data.item(), loss_PDE.item())
@@ -153,7 +155,7 @@ class PINN :
 
             LOSS.backward()
             self.adam.step()
-            self.adam_lamda.step()
+           # self.adam_lamda.step()
 
             # if self.iter % step_size == 0:
             #    self.schedule.step()
