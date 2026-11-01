@@ -18,16 +18,16 @@ torch.cuda.manual_seed(1234)
 torch.manual_seed(1234)
 torch.cuda.empty_cache()
 step_size = 2000
-total_epoch = 40000 
+total_epoch = 45000 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 criterion = nn.MSELoss()
 
 class PINN :
     def __init__(self, x, t, Q, alpha, x_t, t_t, Q_t, alpha_t):
-        layers = [2] + [24] * 4 + [2]
+        layers = [2] + [26] * 6 + [2]
         self.model = mMLP(layers).to(device) #создание прототипа класса network с заранее описанной структурой ИНС
         XX0, TT0 = torch.meshgrid(x,t) #Создание сетки координат для обучающей выборки 
-        self.pipe_L = 40
+        self.pipe_L = 400
         self.n_collo = 10
         x_collocation = torch.linspace(40, self.pipe_L, self.n_collo)
         lb = float(t.min())
@@ -114,7 +114,7 @@ class PINN :
         dP_dx = dp_dx[:, 0]
         dP_dt = dp_dx[:, 1]
         dP_da =  self.lamda*r*0.5*(Q1/S0/(k1*alpha1))**2
-        f_1 = dQ_dt - A*dP_da/r + lamda*Q1* abs (Q1) /2/ D/ A
+        f_1 = dQ_dt + A*dP_da/r + lamda*Q1**2 /2/ D/ A
         f_2 =  r*0.5*(Q1/S0/(k1*alpha1))**2
 
         return f_1, f_2
@@ -127,7 +127,7 @@ class PINN :
         Qa00 = torch.zeros_like(pred_f1)
         loss_PDE = self.criterion(pred_f1, Qa00)
 
-        loss = loss_data + loss_PDE
+        loss = loss_data + 0.25*loss_PDE
 
         if self.iter % 100 == 0:
             print(self.iter, loss.item(), loss_data.item(), loss_PDE.item())
@@ -157,7 +157,7 @@ class PINN :
             self.data_to_fig2.append(loss1.item())
             LOSS.backward()
             self.adam.step()
-           # self.adam_lamda.step()
+            self.adam_lamda.step()
 
             # if self.iter % step_size == 0:
             #    self.schedule.step()
@@ -232,7 +232,7 @@ def ph_tensor2(z):
 if __name__ == "__main__":
     data = sc.loadmat('RU_PG/train.mat')
     #Входные данные в тензор для работы с фреймворком pytorch обучение
-    X_sh = data ['X'] #координата положения 
+    X_sh = data ['X']  
     T_sh = data ['t']
     Q_sh = data ['F']
     alpha_sh = data ['a']
