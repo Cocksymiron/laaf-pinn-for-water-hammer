@@ -18,7 +18,7 @@ torch.cuda.manual_seed(1234)
 torch.manual_seed(1234)
 torch.cuda.empty_cache()
 step_size = 2000
-total_epoch = 45000 
+total_epoch = 40000 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 criterion = nn.MSELoss()
 
@@ -84,7 +84,7 @@ class PINN :
         self.adam = torch.optim.Adam(self.model.parameters())
 
         # lr_decay
-        self.schedule = lr_scheduler.ExponentialLR(self.adam, gamma=0.9)
+        self.schedule = lr_scheduler.ExponentialLR(self.adam, gamma=0.85)
         self.step_size = step_size
 
         self.train_loss = []  # list_loss
@@ -115,7 +115,7 @@ class PINN :
         dP_dt = dp_dx[:, 1]
         dP_da =  self.lamda*r*0.5*(Q1/S0/(k1*alpha1))**2
         f_1 = dQ_dt + A*dP_da/r + lamda*Q1**2 /2/ D/ A
-        f_2 =  r*0.5*(Q1/S0/(k1*alpha1))**2
+        f_2 = r*0.5*(Q1/S0/(k1*alpha1))**2
 
         return f_1, f_2
 
@@ -127,7 +127,7 @@ class PINN :
         Qa00 = torch.zeros_like(pred_f1)
         loss_PDE = self.criterion(pred_f1, Qa00)
 
-        loss = loss_data + 0.25*loss_PDE
+        loss = loss_data + 0.1*loss_PDE
 
         if self.iter % 100 == 0:
             print(self.iter, loss.item(), loss_data.item(), loss_PDE.item())
