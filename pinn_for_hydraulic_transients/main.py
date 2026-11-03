@@ -70,11 +70,11 @@ class PINN :
         # no. iteration
         self.iter = 1
         self.lamda = nn.Parameter(torch.tensor([0.0], requires_grad=True, device=device))
-        self.adam_lamda = torch.optim.Adam([self.lamda], lr=0.001)
+        self.adam_lamda = torch.optim.Adam([self.lamda], lr=0.0001)
 
         # L-BFGS
         self.lbfgs = torch.optim.LBFGS(self.model.parameters(),
-                                       lr=1., max_iter=5000, max_eval=5000,
+                                       lr=1., max_iter=4000, max_eval=5000,
                                        history_size=50,
                                        tolerance_grad=1e-7,
                                        tolerance_change=1.0 * np.finfo(float).eps,
@@ -84,7 +84,7 @@ class PINN :
         self.adam = torch.optim.Adam(self.model.parameters())
 
         # lr_decay
-        self.schedule = lr_scheduler.ExponentialLR(self.adam, gamma=0.85)
+        self.schedule = lr_scheduler.ExponentialLR(self.adam, gamma=0.9)
         self.step_size = step_size
 
         self.train_loss = []  # list_loss
