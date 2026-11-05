@@ -24,7 +24,7 @@ criterion = nn.MSELoss()
 
 class PINN :
     def __init__(self, x, t, Q, alpha, x_t, t_t, Q_t, alpha_t):
-        layers = [2] + [30] * 6 + [2]
+        layers = [2] + [20] * 4 + [2]
         self.model = mMLP(layers).to(device) #создание прототипа класса network с заранее описанной структурой ИНС
         XX0, TT0 = torch.meshgrid(x,t) #Создание сетки координат для обучающей выборки 
         self.pipe_L = 400
@@ -70,7 +70,7 @@ class PINN :
         # no. iteration
         self.iter = 1
         self.lamda = nn.Parameter(torch.tensor([0.0], requires_grad=True, device=device))
-        self.adam_lamda = torch.optim.Adam([self.lamda], lr=0.0001)
+        self.adam_lamda = torch.optim.Adam([self.lamda], lr=0.001)
 
         # L-BFGS
         self.lbfgs = torch.optim.LBFGS(self.model.parameters(),
