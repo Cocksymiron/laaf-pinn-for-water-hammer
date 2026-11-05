@@ -12,7 +12,7 @@ A = np.pi * D**2/4
 r = 900
 lamda = 0.01
 S0 = 0.2
-k1 = 0.01
+k1 = 0.2
 np.random.seed(1234)
 torch.cuda.manual_seed(1234)
 torch.manual_seed(1234)
@@ -24,7 +24,7 @@ criterion = nn.MSELoss()
 
 class PINN :
     def __init__(self, x, t, Q, alpha, x_t, t_t, Q_t, alpha_t):
-        layers = [2] + [26] * 6 + [2]
+        layers = [2] + [30] * 6 + [2]
         self.model = mMLP(layers).to(device) #создание прототипа класса network с заранее описанной структурой ИНС
         XX0, TT0 = torch.meshgrid(x,t) #Создание сетки координат для обучающей выборки 
         self.pipe_L = 400
@@ -112,8 +112,8 @@ class PINN :
                                     grad_outputs=torch.ones_like(alpha1),
                                     create_graph=True)[0]
         dP_dx = dp_dx[:, 0]
-        dP_dt = dp_dx[:, 1]
-        dP_da =  self.lamda*r*0.5*(Q1/S0/(k1*alpha1))**2
+        dP_dt = dp_dx[:, 1] 
+        dP_da =  self.lamda*r*0.5*(Q1/S0/(k1*alpha1))**2 #
         f_1 = dQ_dt + A*dP_da/r + lamda*Q1**2 /2/ D/ A
         f_2 = r*0.5*(Q1/S0/(k1*alpha1))**2
 
