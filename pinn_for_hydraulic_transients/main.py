@@ -18,13 +18,13 @@ torch.cuda.manual_seed(1234)
 torch.manual_seed(1234)
 torch.cuda.empty_cache()
 step_size = 2000
-total_epoch = 40000 
+total_epoch = 50000 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 criterion = nn.MSELoss()
 
 class PINN :
     def __init__(self, x, t, Q, alpha, x_t, t_t, Q_t, alpha_t):
-        layers = [2] + [20] * 4 + [2]
+        layers = [2] + [26] * 6 + [2]
         self.model = mMLP(layers).to(device) #создание прототипа класса network с заранее описанной структурой ИНС
         XX0, TT0 = torch.meshgrid(x,t) #Создание сетки координат для обучающей выборки 
         self.pipe_L = 400
@@ -70,11 +70,11 @@ class PINN :
         # no. iteration
         self.iter = 1
         self.lamda = nn.Parameter(torch.tensor([0.0], requires_grad=True, device=device))
-        self.adam_lamda = torch.optim.Adam([self.lamda], lr=0.001)
+        self.adam_lamda = torch.optim.Adam([self.lamda], lr=0.002)
 
         # L-BFGS
         self.lbfgs = torch.optim.LBFGS(self.model.parameters(),
-                                       lr=1., max_iter=4000, max_eval=5000,
+                                       lr=1., max_iter=40000, max_eval=40000,
                                        history_size=50,
                                        tolerance_grad=1e-7,
                                        tolerance_change=1.0 * np.finfo(float).eps,
@@ -127,8 +127,7 @@ class PINN :
         Qa00 = torch.zeros_like(pred_f1)
         loss_PDE = self.criterion(pred_f1, Qa00)
 
-        loss = loss_data + 0.1*loss_PDE
-
+        loss = loss_data + 0.15*loss_PDE
         if self.iter % 100 == 0:
             print(self.iter, loss.item(), loss_data.item(), loss_PDE.item())
         self.iter = self.iter + 1

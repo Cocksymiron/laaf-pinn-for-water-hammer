@@ -9,7 +9,7 @@ import numpy as np
 from network_LAAF import DNN_LAAF
 
 
-layers = [2] + [20] * 4 + [2]
+layers = [2] + [26] * 6 + [2]
 model = mMLP(layers)
 model_loaded = torch.load('RU_PG.pth')
 model.load_state_dict(model_loaded)
